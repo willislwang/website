@@ -7,9 +7,10 @@ author:
   - dennyglee
   - mariusz-krynsk
 publishedAt: 2022-05-18
+updatedAt: 2026-11-25
 ---
 
-> Updated guidance for Delta Lake Spark 4.5: Supported Hadoop S3A runtimes use S3 conditional writes for multi-cluster commits when no explicit LogStore override applies. See [S3 configuration](https://docs.delta.io/delta-storage/#amazon-s3) and [migration from DynamoDB](https://docs.delta.io/porting/#migrate-s3-writes-from-dynamodb-to-native-conditional-writes). This post describes the DynamoDB implementation introduced in Delta Lake 1.2.
+> Update (November 25, 2026): This post describes the DynamoDB implementation introduced in Delta Lake 1.2. Delta Lake Spark 4.5 supports [S3 conditional writes](https://docs.delta.io/delta-storage/#native-s3-setup) on compatible Hadoop S3A runtimes. Existing DynamoDB configurations remain in effect. Follow the [migration guide](https://docs.delta.io/porting/#migrate-s3-writes-from-dynamodb-to-native-conditional-writes) before switching.
 
 While Delta Lake has supported concurrent reads from multiple clusters since its inception, there were limitations for multi-cluster writes specifically to Amazon S3. Note, this was not a limitation for Azure ADLSgen2 nor Google GCS, as S3 currently lacks "_put-If-Absent_" consistency guarantees. Thus, to guarantee ACID transactions on S3, one would need to have concurrent writes originating from the same Apache Spark™ driver. This was one of the most requested [issues](https://github.com/delta-io/delta/issues/41) by the community and we are excited to announce that Delta Lake 1.2 ([release notes](https://github.com/delta-io/delta/releases/tag/v1.2.0), [blog](https://delta.io/blog/2022-05-05-delta-lake-1-2-released/)) now supports writing data from multiple clusters to S3 while maintaining the transactionality of the writes.
 

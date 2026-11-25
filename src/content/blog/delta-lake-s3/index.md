@@ -4,10 +4,12 @@ description: Configure Delta Lake on S3 with Spark or Polars, including S3 condi
 thumbnail: "./thumbnail.png"
 author: avril-aysha
 publishedAt: 2024-06-28
-updatedAt: 2026-11-13
+updatedAt: 2026-11-25
 ---
 
-Data engineers can read and write Delta Lake tables on Amazon S3 with Spark and Polars. Delta Lake Spark 4.5 and above supports multi-cluster writes through S3 conditional writes on compatible Hadoop S3A runtimes. Existing DynamoDB deployments can follow the [migration guide](https://docs.delta.io/porting/#migrate-s3-writes-from-dynamodb-to-native-conditional-writes).
+> Update (November 25, 2026): This tutorial was first published on June 28, 2024. The Spark examples now target Delta Lake 4.5 with Hadoop S3A 3.4.2 or later. The Polars example uses delta-rs 1.0 or later. Existing DynamoDB users should follow the [migration guide](https://docs.delta.io/porting/#migrate-s3-writes-from-dynamodb-to-native-conditional-writes) before switching.
+
+This tutorial shows how to read and write Delta Lake tables on Amazon S3 with Spark and Polars.
 
 Delta Lake is a great storage format for reliable and fast data storage. It provides features like ACID transactions, scalable metadata handling, high-performance query optimizations, schema enforcement and time travel. With these features you can build a performant lakehouse architecture on top of your data lake.
 
@@ -67,7 +69,7 @@ Use Delta Lake Spark 4.5 and above with a compatible Spark distribution, Hadoop 
 
 1. Install a compatible `pyspark` and `delta-spark` environment and configure your S3 credentials. AWS Identity and Access Management (IAM) roles are recommended. The Hadoop runtime and `hadoop-aws` connector versions must match. Adding a newer connector JAR alone does not upgrade Spark's Hadoop runtime.
 
-1. Start a Spark session. The following example assumes a compatible Spark distribution using Hadoop 3.4.2 and the corresponding Delta Lake 4.5 package:
+2. Start a Spark session. The following example assumes a compatible Spark distribution using Hadoop 3.4.2 and the corresponding Delta Lake 4.5 package:
 
    ```python
    import pyspark
@@ -81,7 +83,6 @@ Use Delta Lake Spark 4.5 and above with a compatible Spark distribution, Hadoop 
            "spark.sql.catalog.spark_catalog",
            "org.apache.spark.sql.delta.catalog.DeltaCatalog",
        )
-       .config("spark.hadoop.fs.s3a.create.conditional.enabled", "true")
    )
    spark = configure_spark_with_delta_pip(
        builder,
@@ -89,7 +90,7 @@ Use Delta Lake Spark 4.5 and above with a compatible Spark distribution, Hadoop 
    ).getOrCreate()
    ```
 
-1. Write and read a table. For example:
+3. Write and read a table. For example:
 
    ```python
    s3_path = "s3a://example-bucket/delta-table"
@@ -97,7 +98,7 @@ Use Delta Lake Spark 4.5 and above with a compatible Spark distribution, Hadoop 
    spark.read.format("delta").load(s3_path).show()
    ```
 
-1. Check the driver logs for `io.delta.storage.S3LogStore`. Resolve a single-driver fallback before writing from independent Spark drivers.
+4. Check the driver logs for `io.delta.storage.S3LogStore`. Resolve a single-driver fallback before writing from independent Spark drivers.
 
 ### Single-driver and multi-cluster support
 
@@ -150,9 +151,9 @@ Follow the steps below to use Delta Lake on S3 with Polars:
 
 3. Set the AWS region. This example uses credentials from the environment or an instance role:
 
-```python
-storage_options = {"AWS_REGION": "us-east-1"}
-```
+   ```python
+   storage_options = {"AWS_REGION": "us-east-1"}
+   ```
 
 4. Write data to Delta table using the `storage_options` kwarg.
 
@@ -168,6 +169,8 @@ Use S3 conditional writes for safe concurrent commits. Do not enable `AWS_S3_ALL
 ## Delta Lake on S3: Safe Concurrent Writes
 
 Every writer on a Delta table must use a compatible atomic commit protocol. A client that writes unconditionally can overwrite another client's commit.
+
+Do not run `S3DynamoDBLogStore` writers and writers using S3 conditional writes on the same table.
 
 For new Spark workloads, use the supported S3 conditional write setup above. For existing `S3DynamoDBLogStore` workloads, keep the DynamoDB table, region, and configuration consistent until all clients complete the coordinated migration. The [compatibility instructions](https://docs.delta.io/delta-storage/#multi-cluster-setup) remain available for those deployments.
 
